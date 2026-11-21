@@ -2,26 +2,20 @@ const colors = [
   { name: 'Coral', symbol: '●', color: '#fa626d' },
   { name: 'Gold', symbol: '◆', color: '#ffc34d' },
   { name: 'Mint', symbol: '▲', color: '#43d6a0' },
-  { name: 'Blue', symbol: '■', color: '#5eaafa' }
+  { name: 'Blue', symbol: '■', color: '#5eaafa' },
+  { name: 'Purple', symbol: '★', color: '#b67df0' },
+  { name: 'Orange', symbol: '✚', color: '#f48e42' },
+  { name: 'Pink', symbol: '♥', color: '#f27fba' },
+  { name: 'Lime', symbol: '✿', color: '#9ccb46' },
+  { name: 'Teal', symbol: '⬟', color: '#27aeb1' }
 ];
 
-const levels = [
-  [[0, 1, 2, 3, 0], [1, 2, 3, 0, 1], [2, 3, 0, 1, 2], [3, 0, 1, 2, 3]],
-  [[2, 0, 3, 1, 2], [3, 1, 0, 2, 3], [0, 2, 1, 3, 0], [1, 3, 2, 0, 1]],
-  [[1, 3, 0, 2, 1], [0, 2, 1, 3, 0], [3, 1, 2, 0, 3], [2, 0, 3, 1, 2]]
-];
-
-const positions = [
-  { x: 27, y: 12, angle: -2.26 },
-  { x: 73, y: 12, angle: -0.88 },
-  { x: 27, y: 88, angle: 2.26 },
-  { x: 73, y: 88, angle: 0.88 }
-];
+const levelTruckCounts = [4, 5, 6, 7, 8, 9, 4, 8, 5, 9, 7, 6];
 const capacity = 5;
 const turn = Math.PI * 2;
 const speed = 0.8;
 const elements = Object.fromEntries(
-  ['level-number', 'progress-text', 'blocks', 'trucks', 'status', 'restart', 'win-modal', 'next-level']
+  ['level-number', 'progress-text', 'blocks', 'top-trucks', 'bottom-trucks', 'status', 'restart', 'win-modal', 'next-level']
     .map(id => [id, document.getElementById(id)])
 );
 
@@ -36,19 +30,29 @@ function startLevel() {
   won = false;
   lastFrame = null;
   elements.blocks.replaceChildren();
-  elements.trucks.replaceChildren();
+  elements['top-trucks'].replaceChildren();
+  elements['bottom-trucks'].replaceChildren();
   elements['win-modal'].hidden = true;
   elements['level-number'].textContent = levelIndex + 1;
   elements.status.textContent = 'Tap a truck to get started!';
-  trucks = levels[levelIndex % levels.length].map((load, index) => {
+  const truckCount = levelTruckCounts[levelIndex % levelTruckCounts.length];
+  const topCount = Math.ceil(truckCount / 2);
+  const columns = truckCount === 4 ? 2 : 3;
+  elements['top-trucks'].style.setProperty('--columns', columns);
+  elements['bottom-trucks'].style.setProperty('--columns', columns);
+  trucks = Array.from({ length: truckCount }, (_, index) => {
+    const top = index < topCount;
+    const column = (top ? index : index - topCount) % columns;
+    const angle = columns === 2
+      ? [-2.26, -0.88][column]
+      : [-2.37, -Math.PI / 2, -0.77][column];
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'truck';
-    button.style.left = `${positions[index].x}%`;
-    button.style.top = `${positions[index].y}%`;
     button.addEventListener('click', () => unloadTruck(index));
-    elements.trucks.append(button);
-    return { load: [...load], active: false, color: null, button };
+    elements[top ? 'top-trucks' : 'bottom-trucks'].append(button);
+    const load = Array.from({ length: capacity }, (_, slot) => (index + slot + levelIndex) % truckCount);
+    return { load, active: false, color: null, button, angle: top ? angle : -angle };
   });
   renderTrucks();
 }
@@ -84,7 +88,7 @@ function unloadTruck(index) {
     block.textContent = colors[colorIndex].symbol;
     block.setAttribute('aria-label', `${colors[colorIndex].name} block on the loop`);
     elements.blocks.append(block);
-    moving.push({ colorIndex, angle: positions[index].angle - offset * 0.15, element: block });
+    moving.push({ colorIndex, angle: truck.angle - offset * 0.15, element: block });
   });
   truck.load = [];
   elements.status.textContent = 'Blocks are moving! Tap another truck to unload it.';
@@ -111,7 +115,7 @@ function collectAtTruck(block, index) {
 function updateBlocks() {
   moving.forEach(block => {
     block.element.style.left = `${50 + 36 * Math.cos(block.angle)}%`;
-    block.element.style.top = `${50 + 25 * Math.sin(block.angle)}%`;
+    block.element.style.top = `${50 + 34 * Math.sin(block.angle)}%`;
   });
 }
 
@@ -123,7 +127,7 @@ function animate(time) {
       const previous = (block.angle + turn) % turn;
       block.angle = (previous + distance) % turn;
       for (let i = 0; i < trucks.length; i++) {
-        const target = (positions[i].angle + turn) % turn;
+        const target = (trucks[i].angle + turn) % turn;
         if ((target - previous + turn) % turn <= distance && collectAtTruck(block, i)) {
           collected = true;
           return false;

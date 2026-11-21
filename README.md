@@ -17,7 +17,8 @@ The game also works when served as a static site, including with GitHub Pages.
    blocks. Select **Next level** to continue.
 
 Blocks keep circling until a matching truck is available. Use the restart
-button at the top to reset the current level.
+button at the top to reset the current level. Levels vary from four to nine
+trucks; the sequence repeats as you advance.
 
 `index.html` contains the page, `style.css` provides the styling, and `game.js`
 handles the levels, animation, and sorting logic.

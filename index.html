@@ -26,15 +26,18 @@
       <p class="instructions">Tap a truck to send its blocks onto the loop. Empty trucks collect one color automatically.</p>
 
       <div class="board" aria-label="Conveyor loop and trucks">
-        <svg class="track" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-          <ellipse cx="50" cy="50" rx="36" ry="25" class="track-shadow"/>
-          <ellipse cx="50" cy="50" rx="36" ry="25" class="track-outer"/>
-          <ellipse cx="50" cy="50" rx="36" ry="25" class="track-inner"/>
-          <ellipse cx="50" cy="50" rx="36" ry="25" class="track-dashes"/>
-        </svg>
-        <div class="board-center" aria-hidden="true"><span>↻</span><strong>LET'S SORT</strong></div>
-        <div id="blocks"></div>
-        <div id="trucks"></div>
+        <div class="truck-group" id="top-trucks"></div>
+        <div class="loop">
+          <svg class="track" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+            <ellipse cx="50" cy="50" rx="36" ry="34" class="track-shadow"/>
+            <ellipse cx="50" cy="50" rx="36" ry="34" class="track-outer"/>
+            <ellipse cx="50" cy="50" rx="36" ry="34" class="track-inner"/>
+            <ellipse cx="50" cy="50" rx="36" ry="34" class="track-dashes"/>
+          </svg>
+          <div class="board-center" aria-hidden="true"><span>↻</span><strong>LET'S SORT</strong></div>
+          <div id="blocks"></div>
+        </div>
+        <div class="truck-group" id="bottom-trucks"></div>
       </div>
       <div class="status" id="status" role="status" aria-live="polite">Tap a truck to get started!</div>
       <div class="legend"><span class="legend-dot"></span> Fill each truck with 5 blocks of the same color</div>
