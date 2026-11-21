@@ -1,193 +1,156 @@
 const colors = [
-  { name: 'Peach', symbol: '●', color: '#e9a58f', border: '#f1ded6', glow: '#f8e5de', angle: -Math.PI / 2, x: 50, y: 9 },
-  { name: 'Honey', symbol: '◆', color: '#e9be70', border: '#f2e8d1', glow: '#f9efd8', angle: 0, x: 91, y: 50 },
-  { name: 'Lilac', symbol: '✦', color: '#ad9bc3', border: '#e9e2ef', glow: '#eee8f5', angle: Math.PI / 2, x: 50, y: 91 },
-  { name: 'Mint', symbol: '▲', color: '#8bbca5', border: '#dcece3', glow: '#e1f1e7', angle: Math.PI, x: 9, y: 50 }
+  { name: 'Coral', symbol: '●', color: '#fa626d' },
+  { name: 'Gold', symbol: '◆', color: '#ffc34d' },
+  { name: 'Mint', symbol: '▲', color: '#43d6a0' },
+  { name: 'Blue', symbol: '■', color: '#5eaafa' }
 ];
 
 const levels = [
-  { limit: 3, sequence: [0, 1, 2, 3, 1, 0, 3, 2, 0, 2, 1, 3, 3, 1, 0, 2, 2, 3, 1, 0] },
-  { limit: 3, sequence: [2, 0, 3, 1, 2, 3, 0, 1, 3, 2, 1, 0, 1, 3, 2, 0, 0, 2, 3, 1] },
-  { limit: 2, sequence: [1, 3, 0, 2, 1, 0, 2, 3, 1, 2, 0, 3, 3, 0, 2, 1, 2, 1, 3, 0] }
+  [[0, 1, 2, 3, 0], [1, 2, 3, 0, 1], [2, 3, 0, 1, 2], [3, 0, 1, 2, 3]],
+  [[2, 0, 3, 1, 2], [3, 1, 0, 2, 3], [0, 2, 1, 3, 0], [1, 3, 2, 0, 1]],
+  [[1, 3, 0, 2, 1], [0, 2, 1, 3, 0], [3, 1, 2, 0, 3], [2, 0, 3, 1, 2]]
 ];
 
+const positions = [
+  { x: 27, y: 12, angle: -2.26 },
+  { x: 73, y: 12, angle: -0.88 },
+  { x: 27, y: 88, angle: 2.26 },
+  { x: 73, y: 88, angle: 0.88 }
+];
+const capacity = 5;
+const turn = Math.PI * 2;
+const speed = 0.8;
 const elements = Object.fromEntries(
-  ['level-number', 'track-count', 'blocks', 'stations', 'progress-text', 'progress-fill', 'queue', 'send', 'hint', 'restart', 'win-modal', 'next-level', 'truck-load', 'load-count']
+  ['level-number', 'progress-text', 'blocks', 'trucks', 'status', 'restart', 'win-modal', 'next-level']
     .map(id => [id, document.getElementById(id)])
 );
 
 let levelIndex = 0;
-let level;
-let nextBlock;
-let sorted;
-let moving;
-let lastFrame;
-let won;
-const stationButtons = [];
-const stationCounts = [];
-const stackSize = 5;
-const turn = Math.PI * 2;
-const catchDistance = 0.38;
-
-function colorStyle(color) {
-  return `--color:${color.color};--border:${color.border};--glow:${color.glow}`;
-}
+let trucks = [];
+let moving = [];
+let lastFrame = null;
+let won = false;
 
 function startLevel() {
-  level = levels[levelIndex % levels.length];
-  nextBlock = 0;
-  sorted = 0;
   moving = [];
   won = false;
   lastFrame = null;
-  elements['win-modal'].hidden = true;
-  elements['level-number'].textContent = String(levelIndex + 1).padStart(2, '0');
-  elements.stations.replaceChildren();
   elements.blocks.replaceChildren();
-  colors.forEach((color, index) => {
-    stationCounts[index] = 0;
+  elements.trucks.replaceChildren();
+  elements['win-modal'].hidden = true;
+  elements['level-number'].textContent = levelIndex + 1;
+  elements.status.textContent = 'Tap a truck to get started!';
+  trucks = levels[levelIndex % levels.length].map((load, index) => {
     const button = document.createElement('button');
     button.type = 'button';
-    button.className = 'station';
-    button.style.cssText = `${colorStyle(color)};left:${color.x}%;top:${color.y}%`;
-    button.innerHTML = `<span class="station-icon">${color.symbol}</span><span class="station-name">${color.name}<small>0 / ${stackSize}</small></span>`;
-    button.setAttribute('aria-label', `${color.name} station, 0 of ${stackSize} blocks`);
-    button.addEventListener('click', () => sortAtStation(index));
-    stationButtons[index] = button;
-    elements.stations.append(button);
+    button.className = 'truck';
+    button.style.left = `${positions[index].x}%`;
+    button.style.top = `${positions[index].y}%`;
+    button.addEventListener('click', () => unloadTruck(index));
+    elements.trucks.append(button);
+    return { load: [...load], active: false, color: null, button };
   });
-  render();
+  renderTrucks();
 }
 
-function render() {
-  elements['track-count'].textContent = `${moving.length} / ${level.limit}`;
-  elements['progress-text'].textContent = `${sorted} / ${level.sequence.length} sorted`;
-  elements['progress-fill'].style.width = `${sorted / level.sequence.length * 100}%`;
-  elements['truck-load'].replaceChildren();
-  colors.forEach((color, index) => {
-    const count = stationCounts[index];
-    const stack = document.createElement('div');
-    stack.className = `cargo-stack${count === stackSize ? ' loaded' : ''}`;
-    stack.style.cssText = colorStyle(color);
-    stack.setAttribute('aria-label', `${color.name}: ${count} of ${stackSize} blocks${count === stackSize ? ', loaded' : ', collecting'}`);
-    for (let i = stackSize; i > 0; i--) {
-      const block = document.createElement('span');
-      block.className = `cargo-block${count === stackSize ? ' filled' : ''}`;
-      block.textContent = count === stackSize ? color.symbol : '';
-      block.setAttribute('aria-hidden', 'true');
-      stack.append(block);
-    }
-    const label = document.createElement('span');
-    label.className = 'cargo-label';
-    label.textContent = count === stackSize ? 'LOADED' : 'WAITING';
-    stack.append(label);
-    elements['truck-load'].append(stack);
+function renderTrucks() {
+  trucks.forEach((truck, index) => {
+    const complete = truck.active && truck.load.length === capacity;
+    truck.button.classList.toggle('active', truck.active);
+    truck.button.classList.toggle('complete', complete);
+    truck.button.disabled = truck.active;
+    const description = truck.load.length
+      ? truck.load.map(color => colors[color].name).join(', ')
+      : 'empty';
+    truck.button.setAttribute('aria-label', `Truck ${index + 1}: ${description}. ${complete ? 'Sorted.' : truck.active ? 'Collecting automatically.' : 'Tap to unload.'}`);
+    truck.button.innerHTML = `<span class="truck-bed">${Array.from({ length: capacity }, (_, slot) => {
+      const color = colors[truck.load[slot]];
+      return color
+        ? `<span class="cargo" style="--cargo:${color.color}" aria-hidden="true">${color.symbol}</span>`
+        : '<span class="cargo empty" aria-hidden="true"></span>';
+    }).join('')}</span><span class="truck-cab" aria-hidden="true"><span></span></span><span class="truck-wheels" aria-hidden="true"></span><span class="truck-label">${complete ? 'SORTED!' : truck.active ? (truck.color === null ? 'WAITING' : colors[truck.color].name.toUpperCase()) : 'TAP TO UNLOAD'}</span>`;
   });
-  elements['load-count'].textContent = `${stationCounts.filter(count => count === stackSize).length} / ${colors.length} STACKS LOADED`;
-  elements.queue.replaceChildren();
-  for (let i = 0; i < 5; i++) {
-    const slot = document.createElement('div');
-    slot.className = 'queue-slot';
-    const colorIndex = level.sequence[nextBlock + i];
-    if (colorIndex !== undefined) {
-      const color = colors[colorIndex];
-      const block = document.createElement('span');
-      block.className = 'queue-block';
-      block.style.cssText = colorStyle(color);
-      block.textContent = color.symbol;
-      block.setAttribute('aria-label', color.name);
-      slot.append(block);
-    }
-    elements.queue.append(slot);
-  }
-  updateSendState();
+  elements['progress-text'].textContent = `${trucks.filter(truck => truck.active && truck.load.length === capacity).length} / ${trucks.length}`;
 }
 
-function sendBlock() {
-  if (elements.send.disabled) return;
-  const colorIndex = level.sequence[nextBlock++];
-  const color = colors[colorIndex];
-  const element = document.createElement('div');
-  element.className = 'block';
-  element.style.cssText = colorStyle(color);
-  element.textContent = color.symbol;
-  element.setAttribute('aria-label', `${color.name} block on loop`);
-  elements.blocks.append(element);
-  moving.push({ colorIndex, angle: Math.PI / 2, element });
+function unloadTruck(index) {
+  const truck = trucks[index];
+  if (truck.active || won) return;
+  truck.active = true;
+  truck.load.forEach((colorIndex, offset) => {
+    const block = document.createElement('span');
+    block.className = 'block';
+    block.style.setProperty('--cargo', colors[colorIndex].color);
+    block.textContent = colors[colorIndex].symbol;
+    block.setAttribute('aria-label', `${colors[colorIndex].name} block on the loop`);
+    elements.blocks.append(block);
+    moving.push({ colorIndex, angle: positions[index].angle - offset * 0.15, element: block });
+  });
+  truck.load = [];
+  elements.status.textContent = 'Blocks are moving! Tap another truck to unload it.';
+  renderTrucks();
   updateBlocks();
-  render();
 }
 
-function distance(a, b) {
-  return Math.abs(Math.atan2(Math.sin(a - b), Math.cos(a - b)));
-}
-
-function updateSendState() {
-  const full = moving.length >= level.limit;
-  const empty = nextBlock >= level.sequence.length;
-  const launchBusy = moving.some(block => distance(block.angle, Math.PI / 2) < 0.3);
-  elements.send.disabled = full || empty || launchBusy || won;
-  const message = full
-    ? 'The loop is full! Sort a block to make room.'
-    : empty
-      ? 'All blocks are on their way. Bring them home!'
-      : launchBusy
-        ? 'Give that block a moment to move along.'
-        : 'One at a time! Keep an eye on the loop limit.';
-  if (elements.hint.lastChild.textContent !== ` ${message}`) {
-    elements.hint.lastChild.textContent = ` ${message}`;
+function collectAtTruck(block, index) {
+  const truck = trucks[index];
+  if (!truck.active || truck.load.length === capacity) return false;
+  if (truck.color === null) {
+    if (trucks.some(other => other !== truck && other.color === block.colorIndex)) return false;
+    truck.color = block.colorIndex;
   }
-}
-
-function sortAtStation(index) {
-  if (won) return;
-  const candidates = moving.filter(block => block.colorIndex === index && distance(block.angle, colors[index].angle) <= catchDistance);
-  if (!candidates.length) return;
-  candidates.sort((a, b) => distance(a.angle, colors[index].angle) - distance(b.angle, colors[index].angle));
-  const block = candidates[0];
+  if (truck.color !== block.colorIndex) return false;
+  truck.load.push(block.colorIndex);
   block.element.remove();
-  moving.splice(moving.indexOf(block), 1);
-  sorted++;
-  stationCounts[index]++;
-  stationButtons[index].querySelector('small').textContent = stationCounts[index] === stackSize ? 'Loaded!' : `${stationCounts[index]} / ${stackSize}`;
-  stationButtons[index].setAttribute('aria-label', `${colors[index].name} station, ${stationCounts[index]} of ${stackSize} blocks${stationCounts[index] === stackSize ? ', loaded' : ''}`);
-  updateBlocks();
-  if (sorted === level.sequence.length) {
-    won = true;
-    elements['win-modal'].hidden = false;
-    elements['next-level'].focus();
-  }
-  render();
+  elements.status.textContent = truck.load.length === capacity
+    ? `${colors[truck.color].name} truck sorted!`
+    : `${colors[truck.color].name} truck: ${truck.load.length} of ${capacity} blocks.`;
+  return true;
 }
 
 function updateBlocks() {
   moving.forEach(block => {
     block.element.style.left = `${50 + 36 * Math.cos(block.angle)}%`;
-    block.element.style.top = `${50 + 31 * Math.sin(block.angle)}%`;
+    block.element.style.top = `${50 + 25 * Math.sin(block.angle)}%`;
   });
-  stationButtons.forEach((button, index) => {
-    const ready = moving.some(block => block.colorIndex === index && distance(block.angle, colors[index].angle) <= catchDistance);
-    button.classList.toggle('ready', ready);
-  });
-  updateSendState();
 }
 
 function animate(time) {
   if (lastFrame !== null && !won) {
-    const elapsed = Math.min((time - lastFrame) / 1000, 0.05);
-    moving.forEach(block => { block.angle = (block.angle + elapsed * 0.65) % turn; });
+    const distance = Math.min((time - lastFrame) / 1000, 0.05) * speed;
+    let collected = false;
+    moving = moving.filter(block => {
+      const previous = (block.angle + turn) % turn;
+      block.angle = (previous + distance) % turn;
+      for (let i = 0; i < trucks.length; i++) {
+        const target = (positions[i].angle + turn) % turn;
+        if ((target - previous + turn) % turn <= distance && collectAtTruck(block, i)) {
+          collected = true;
+          return false;
+        }
+      }
+      return true;
+    });
     updateBlocks();
+    if (collected) {
+      renderTrucks();
+      if (trucks.every(truck => truck.active && truck.load.length === capacity)) {
+        won = true;
+        elements.status.textContent = 'All trucks sorted!';
+        elements['win-modal'].hidden = false;
+        elements['next-level'].focus();
+      }
+    }
   }
   lastFrame = time;
   requestAnimationFrame(animate);
 }
 
-elements.send.addEventListener('click', sendBlock);
 elements.restart.addEventListener('click', startLevel);
 elements['next-level'].addEventListener('click', () => {
   levelIndex++;
   startLevel();
-  elements.send.focus();
+  trucks[0].button.focus();
 });
 startLevel();
 requestAnimationFrame(animate);

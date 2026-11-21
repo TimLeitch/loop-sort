@@ -3,91 +3,51 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#f7f5ef">
-  <title>Loop Sort — a little game of color</title>
+  <meta name="theme-color" content="#292051">
+  <title>Loop Sort — Truck Puzzle</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <main class="app">
     <header class="topbar">
-      <a class="brand" href="./" aria-label="Loop Sort home"><span class="brand-mark">↻</span> loop<span>sort</span><i>.</i></a>
-      <span class="top-note"><span>✦</span> A LITTLE GAME OF COLOR</span>
-      <button class="soundless-button" id="restart" type="button" aria-label="Restart level" title="Restart level">↺</button>
+      <a class="brand" href="./" aria-label="Loop Sort home">LOOP <span>SORT</span></a>
+      <div class="level">LEVEL <strong id="level-number">1</strong></div>
+      <button class="restart" id="restart" type="button" aria-label="Restart level" title="Restart level">↻</button>
     </header>
 
-    <section class="intro">
-      <div>
-        <div class="eyebrow"><span class="eyebrow-dot"></span> TAKE IT FOR A SPIN</div>
-        <h1>Find your <em>flow.</em></h1>
-        <p>Sort blocks by color, build stacks of five, and load the truck.</p>
-      </div>
-      <div class="level-pill"><span>✳</span> LEVEL <strong id="level-number">01</strong></div>
-    </section>
-
-    <section class="game-card" aria-label="Loop sorting game">
+    <section class="game" aria-label="Truck sorting game">
       <div class="game-heading">
-        <div><span class="section-kicker">THE SORTING LOOP</span><h2>Round and round we go <span>✳</span></h2></div>
-        <div class="track-count"><span class="track-count-dot"></span> ON THE LOOP <strong id="track-count">0 / 3</strong></div>
-      </div>
-
-      <div class="board" id="board" aria-label="Moving blocks and color stations">
-        <svg class="track" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-          <ellipse cx="50" cy="50" rx="36" ry="31" class="track-shadow"/>
-          <ellipse cx="50" cy="50" rx="36" ry="31" class="track-base"/>
-          <ellipse cx="50" cy="50" rx="36" ry="31" class="track-dashes"/>
-        </svg>
-        <div class="board-center"><span class="center-icon">↻</span><strong>Keep it moving</strong><small>Tap a matching station<br>when a block is near.</small></div>
-        <div class="direction direction-one" aria-hidden="true">›</div>
-        <div class="direction direction-two" aria-hidden="true">›</div>
-        <div id="blocks"></div>
-        <div id="stations"></div>
-      </div>
-
-      <div class="game-footer">
-        <div class="progress-label"><span>LEVEL PROGRESS</span><strong id="progress-text">0 / 20 sorted</strong></div>
-        <div class="progress-track"><div id="progress-fill"></div></div>
-      </div>
-    </section>
-
-    <section class="truck-card" aria-label="Truck loading area">
-      <div class="dock-heading">
-        <div><span class="section-kicker">THE BIG LOAD</span><h2>Fill the truck <span>↗</span></h2></div>
-        <span class="dock-capacity" id="load-count">0 / 4 STACKS LOADED</span>
-      </div>
-      <p class="truck-instructions">Collect five matching blocks at a station to load a stack into the truck.</p>
-      <div class="truck">
-        <div class="truck-bed">
-          <div class="truck-load" id="truck-load" aria-label="Color stacks"></div>
-          <span class="truck-bed-label">TRUCK BED</span>
+        <div>
+          <span class="eyebrow">A LITTLE COLOR PUZZLE</span>
+          <h1>Sort the load<span>!</span></h1>
         </div>
-        <div class="truck-cab" aria-hidden="true"><span></span></div>
-        <div class="truck-wheel wheel-back" aria-hidden="true"></div>
-        <div class="truck-wheel wheel-front" aria-hidden="true"></div>
+        <div class="progress"><span>TRUCKS SORTED</span><strong id="progress-text">0 / 4</strong></div>
       </div>
-    </section>
+      <p class="instructions">Tap a truck to send its blocks onto the loop. Empty trucks collect one color automatically.</p>
 
-    <section class="dock-card" aria-label="Loading dock">
-      <div class="dock-heading">
-        <div><span class="section-kicker">UP NEXT</span><h2>Loading dock <span>↗</span></h2></div>
-        <span class="dock-capacity">5 BLOCKS IN LINE</span>
+      <div class="board" aria-label="Conveyor loop and trucks">
+        <svg class="track" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+          <ellipse cx="50" cy="50" rx="36" ry="25" class="track-shadow"/>
+          <ellipse cx="50" cy="50" rx="36" ry="25" class="track-outer"/>
+          <ellipse cx="50" cy="50" rx="36" ry="25" class="track-inner"/>
+          <ellipse cx="50" cy="50" rx="36" ry="25" class="track-dashes"/>
+        </svg>
+        <div class="board-center" aria-hidden="true"><span>↻</span><strong>LET'S SORT</strong></div>
+        <div id="blocks"></div>
+        <div id="trucks"></div>
       </div>
-      <div class="dock-content">
-        <div class="queue-wrap"><div class="queue" id="queue" aria-label="Next five blocks"></div><span class="queue-caption">NEXT UP <span>→</span></span></div>
-        <button class="send-button" id="send" type="button"><span>Send to loop</span><span class="button-arrow">↗</span></button>
-      </div>
-      <p class="dock-hint" id="hint"><span>✦</span> One at a time! Keep an eye on the loop limit.</p>
+      <div class="status" id="status" role="status" aria-live="polite">Tap a truck to get started!</div>
+      <div class="legend"><span class="legend-dot"></span> Fill each truck with 5 blocks of the same color</div>
     </section>
-
-    <div class="how-to"><span class="how-icon">✳</span><p><strong>A little tip</strong> &nbsp; Tap a station when its matching block is nearby. Five of a color make a truckload stack. Blocks keep looping if you miss one!</p></div>
-    <footer>MADE FOR A LITTLE MOMENT OF CALM <span>✳</span></footer>
+    <footer>TAKE YOUR TIME <span>✦</span> ENJOY THE LOOP</footer>
   </main>
   <div class="modal" id="win-modal" hidden>
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="win-title">
-      <div class="modal-icon">✳</div>
-      <span class="section-kicker">NICE SORTING!</span>
-      <h2 id="win-title">That was a smooth loop.</h2>
-      <p>Every five-block stack is loaded in the truck. Ready for another spin?</p>
-      <button class="send-button" id="next-level" type="button">Next level <span class="button-arrow">↗</span></button>
+      <div class="modal-icon">★</div>
+      <span class="eyebrow">ALL SORTED!</span>
+      <h2 id="win-title">Nice work!</h2>
+      <p>Every truck has a matching load of five.</p>
+      <button class="next-button" id="next-level" type="button">Next level <span>→</span></button>
     </div>
   </div>
   <script src="game.js"></script>
