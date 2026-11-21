@@ -19,7 +19,7 @@
       <div>
         <div class="eyebrow"><span class="eyebrow-dot"></span> TAKE IT FOR A SPIN</div>
         <h1>Find your <em>flow.</em></h1>
-        <p>Send the blocks around the loop and help each one find its color.</p>
+        <p>Sort blocks by color, build stacks of five, and load the truck.</p>
       </div>
       <div class="level-pill"><span>✳</span> LEVEL <strong id="level-number">01</strong></div>
     </section>
@@ -44,8 +44,25 @@
       </div>
 
       <div class="game-footer">
-        <div class="progress-label"><span>LEVEL PROGRESS</span><strong id="progress-text">0 / 8 sorted</strong></div>
+        <div class="progress-label"><span>LEVEL PROGRESS</span><strong id="progress-text">0 / 20 sorted</strong></div>
         <div class="progress-track"><div id="progress-fill"></div></div>
+      </div>
+    </section>
+
+    <section class="truck-card" aria-label="Truck loading area">
+      <div class="dock-heading">
+        <div><span class="section-kicker">THE BIG LOAD</span><h2>Fill the truck <span>↗</span></h2></div>
+        <span class="dock-capacity" id="load-count">0 / 4 STACKS LOADED</span>
+      </div>
+      <p class="truck-instructions">Collect five matching blocks at a station to load a stack into the truck.</p>
+      <div class="truck">
+        <div class="truck-bed">
+          <div class="truck-load" id="truck-load" aria-label="Color stacks"></div>
+          <span class="truck-bed-label">TRUCK BED</span>
+        </div>
+        <div class="truck-cab" aria-hidden="true"><span></span></div>
+        <div class="truck-wheel wheel-back" aria-hidden="true"></div>
+        <div class="truck-wheel wheel-front" aria-hidden="true"></div>
       </div>
     </section>
 
@@ -61,7 +78,7 @@
       <p class="dock-hint" id="hint"><span>✦</span> One at a time! Keep an eye on the loop limit.</p>
     </section>
 
-    <div class="how-to"><span class="how-icon">✳</span><p><strong>A little tip</strong> &nbsp; Tap a station when its matching block is nearby. Take your time — blocks keep looping!</p></div>
+    <div class="how-to"><span class="how-icon">✳</span><p><strong>A little tip</strong> &nbsp; Tap a station when its matching block is nearby. Five of a color make a truckload stack. Blocks keep looping if you miss one!</p></div>
     <footer>MADE FOR A LITTLE MOMENT OF CALM <span>✳</span></footer>
   </main>
   <div class="modal" id="win-modal" hidden>
@@ -69,7 +86,7 @@
       <div class="modal-icon">✳</div>
       <span class="section-kicker">NICE SORTING!</span>
       <h2 id="win-title">That was a smooth loop.</h2>
-      <p>Every block found its way home. Ready for another spin?</p>
+      <p>Every five-block stack is loaded in the truck. Ready for another spin?</p>
       <button class="send-button" id="next-level" type="button">Next level <span class="button-arrow">↗</span></button>
     </div>
   </div>

@@ -1,14 +1,18 @@
 # Loop Sort
 
 Loop Sort is a browser game about helping colorful blocks find their way home.
-Send blocks around a loop and sort each one into its matching color station.
+Send blocks around a loop, sort them by color, and load five-block stacks into a truck.
 
 ## Project status
 
 The game is currently being developed in
 [pull request #1](https://github.com/TimLeitch/loop-sort/pull/1). The game files
 are not yet present on `main`; the instructions below describe the current
-implementation on the `copilot/loop-sort-game` branch, which may change.
+implementation on the game branches, which may change.
+
+GitHub Pages can serve this static game directly from the repository root.
+While the game is not on `main`, configure Pages to publish from the game
+branch. After merging, switch the Pages source to `main`.
 
 ## Play locally
 
@@ -28,7 +32,9 @@ and mobile browsers.
    The dock shows up to five upcoming blocks.
 2. When a block approaches its matching station, select that station to sort
    it. Stations and blocks have matching colors and symbols.
-3. Sort every block to complete the level, then select **Next level** to continue.
+3. Each station collects five matching blocks. Once a stack is complete, it is
+   loaded into the truck. Load all four stacks to complete the level, then
+   select **Next level** to continue.
 
 Each level limits the number of blocks that can be on the loop at once. If the
 loop is full, sort a block before sending another. Blocks keep circling if you
