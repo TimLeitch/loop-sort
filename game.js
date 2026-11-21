@@ -6,13 +6,13 @@ const colors = [
 ];
 
 const levels = [
-  { limit: 3, sequence: [0, 1, 2, 3, 1, 0, 3, 2] },
-  { limit: 3, sequence: [2, 0, 3, 1, 2, 3, 0, 1, 3, 2] },
-  { limit: 2, sequence: [1, 3, 0, 2, 1, 0, 2, 3, 1, 2, 0, 3] }
+  { limit: 3, sequence: [0, 1, 2, 3, 1, 0, 3, 2, 0, 2, 1, 3, 3, 1, 0, 2, 2, 3, 1, 0] },
+  { limit: 3, sequence: [2, 0, 3, 1, 2, 3, 0, 1, 3, 2, 1, 0, 1, 3, 2, 0, 0, 2, 3, 1] },
+  { limit: 2, sequence: [1, 3, 0, 2, 1, 0, 2, 3, 1, 2, 0, 3, 3, 0, 2, 1, 2, 1, 3, 0] }
 ];
 
 const elements = Object.fromEntries(
-  ['level-number', 'track-count', 'blocks', 'stations', 'progress-text', 'progress-fill', 'queue', 'send', 'hint', 'restart', 'win-modal', 'next-level']
+  ['level-number', 'track-count', 'blocks', 'stations', 'progress-text', 'progress-fill', 'queue', 'send', 'hint', 'restart', 'win-modal', 'next-level', 'truck-load', 'load-count']
     .map(id => [id, document.getElementById(id)])
 );
 
@@ -25,6 +25,7 @@ let lastFrame;
 let won;
 const stationButtons = [];
 const stationCounts = [];
+const stackSize = 5;
 const turn = Math.PI * 2;
 const catchDistance = 0.38;
 
@@ -49,8 +50,8 @@ function startLevel() {
     button.type = 'button';
     button.className = 'station';
     button.style.cssText = `${colorStyle(color)};left:${color.x}%;top:${color.y}%`;
-    button.innerHTML = `<span class="station-icon">${color.symbol}</span><span class="station-name">${color.name}<small>0 sorted</small></span>`;
-    button.setAttribute('aria-label', `${color.name} station, 0 sorted`);
+    button.innerHTML = `<span class="station-icon">${color.symbol}</span><span class="station-name">${color.name}<small>0 / ${stackSize}</small></span>`;
+    button.setAttribute('aria-label', `${color.name} station, 0 of ${stackSize} blocks`);
     button.addEventListener('click', () => sortAtStation(index));
     stationButtons[index] = button;
     elements.stations.append(button);
@@ -62,6 +63,27 @@ function render() {
   elements['track-count'].textContent = `${moving.length} / ${level.limit}`;
   elements['progress-text'].textContent = `${sorted} / ${level.sequence.length} sorted`;
   elements['progress-fill'].style.width = `${sorted / level.sequence.length * 100}%`;
+  elements['truck-load'].replaceChildren();
+  colors.forEach((color, index) => {
+    const count = stationCounts[index];
+    const stack = document.createElement('div');
+    stack.className = `cargo-stack${count === stackSize ? ' loaded' : ''}`;
+    stack.style.cssText = colorStyle(color);
+    stack.setAttribute('aria-label', `${color.name}: ${count} of ${stackSize} blocks${count === stackSize ? ', loaded' : ', collecting'}`);
+    for (let i = stackSize; i > 0; i--) {
+      const block = document.createElement('span');
+      block.className = `cargo-block${count === stackSize ? ' filled' : ''}`;
+      block.textContent = count === stackSize ? color.symbol : '';
+      block.setAttribute('aria-hidden', 'true');
+      stack.append(block);
+    }
+    const label = document.createElement('span');
+    label.className = 'cargo-label';
+    label.textContent = count === stackSize ? 'LOADED' : 'WAITING';
+    stack.append(label);
+    elements['truck-load'].append(stack);
+  });
+  elements['load-count'].textContent = `${stationCounts.filter(count => count === stackSize).length} / ${colors.length} STACKS LOADED`;
   elements.queue.replaceChildren();
   for (let i = 0; i < 5; i++) {
     const slot = document.createElement('div');
@@ -127,8 +149,8 @@ function sortAtStation(index) {
   moving.splice(moving.indexOf(block), 1);
   sorted++;
   stationCounts[index]++;
-  stationButtons[index].querySelector('small').textContent = `${stationCounts[index]} sorted`;
-  stationButtons[index].setAttribute('aria-label', `${colors[index].name} station, ${stationCounts[index]} sorted`);
+  stationButtons[index].querySelector('small').textContent = stationCounts[index] === stackSize ? 'Loaded!' : `${stationCounts[index]} / ${stackSize}`;
+  stationButtons[index].setAttribute('aria-label', `${colors[index].name} station, ${stationCounts[index]} of ${stackSize} blocks${stationCounts[index] === stackSize ? ', loaded' : ''}`);
   updateBlocks();
   if (sorted === level.sequence.length) {
     won = true;
